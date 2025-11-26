@@ -1,0 +1,103 @@
+# 音声ファイル
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.aac
+*.wma
+*.aiff
+*.opus
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 仮想環境
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# 環境変数
+.env
+.env.local
+.env.*.local
+
+# モデルファイル・キャッシュ
+model_assets/
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.h5
+*.pb
+__MACOSX/
+
+# データセット
+data/
+dataset/
+datasets/
+japanese-anime-speech-dataset/
+
+# 出力ディレクトリ
+output/
+outputs/
+output_segments/
+split_segments/
+wav_file/*.wav
+m4a_file/*.m4a
+audio/*
+audios/*
+
+# ログファイル
+*.log
+logs/
+
+# キャッシュ
+.cache/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# その他
+*.bak
+*.tmp
+*.temp
+.coverage
+htmlcov/
