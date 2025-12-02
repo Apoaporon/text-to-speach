@@ -5,8 +5,8 @@ from pathlib import Path
 from pydub import AudioSegment
 
 # ===== 設定: ここでパスを指定 =====
-INPUT_PATH = "m4a_file/takaichi2.m4a"  # 変換元のM4Aファイルまたはディレクトリ
-OUTPUT_PATH = "wav_file"  # 出力先（Noneの場合は入力と同じ場所に保存）
+INPUT_PATH = "audio/m4a_file/takaichi4.m4a"  # 変換元のM4Aファイルまたはディレクトリ
+OUTPUT_PATH = "audio/wav_file/takaichi"  # 出力先（Noneの場合は入力と同じ場所に保存）
 IS_DIRECTORY = False  # Trueの場合はディレクトリ内の全M4Aファイルを変換
 # ================================
 
