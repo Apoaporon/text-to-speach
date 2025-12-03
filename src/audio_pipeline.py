@@ -1,7 +1,9 @@
 """
 音声分析結果に基づいて自動的に前処理を実行するパイプライン
 """
+import json
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -95,6 +97,139 @@ class AudioProcessingPipeline:
             'noise_info': noise_info,
             'processing_plan': processing_plan
         }
+
+    def _convert_to_serializable(self, obj):
+        """
+        NumPy型などをJSON変換可能な型に変換
+
+        Args:
+            obj: 変換対象のオブジェクト
+
+        Returns:
+            JSON変換可能なオブジェクト
+        """
+        if isinstance(obj, dict):
+            return {key: self._convert_to_serializable(value) for key, value in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self._convert_to_serializable(item) for item in obj]
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.bool_, bool)):
+            return bool(obj)
+        else:
+            return obj
+
+    def save_processing_plan(
+        self,
+        analysis_result: Dict,
+        input_file: str,
+        output_file: str,
+        plan_file: Optional[str] = None
+    ) -> str:
+        """
+        処理計画をJSONファイルに保存
+
+        Args:
+            analysis_result: 分析結果
+            input_file: 入力ファイルパス
+            output_file: 出力ファイルパス
+            plan_file: 保存先のJSONファイルパス（省略時は自動生成）
+
+        Returns:
+            保存したJSONファイルのパス
+        """
+        if plan_file is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            input_name = Path(input_file).stem
+            plan_file = f"audio/output/plan_{input_name}_{timestamp}.json"
+
+        # NumPy型を標準のPython型に変換
+        plan_data = {
+            'created_at': datetime.now().isoformat(),
+            'input_file': input_file,
+            'output_file': output_file,
+            'file_info': self._convert_to_serializable(analysis_result['file_info']),
+            'level_info': self._convert_to_serializable(analysis_result['level_info']),
+            'noise_info': self._convert_to_serializable(analysis_result['noise_info']),
+            'processing_plan': [
+                {
+                    'name': name,
+                    'function': func_name,
+                    'params': self._convert_to_serializable(params),
+                    'completed': False
+                }
+                for name, func_name, params in analysis_result['processing_plan']
+            ]
+        }
+
+        plan_path = Path(plan_file)
+        plan_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(plan_path, 'w', encoding='utf-8') as f:
+            json.dump(plan_data, f, ensure_ascii=False, indent=2)
+
+        self._print(f"\n📋 処理計画を保存しました: {plan_file}")
+        return str(plan_path)
+
+    def load_processing_plan(self, plan_file: str) -> Dict:
+        """
+        処理計画をJSONファイルから読み込み
+
+        Args:
+            plan_file: JSONファイルのパス
+
+        Returns:
+            処理計画の辞書
+        """
+        with open(plan_file, 'r', encoding='utf-8') as f:
+            plan_data = json.load(f)
+
+        # 未完了の処理のみを抽出
+        processing_plan = [
+            (item['name'], item['function'], item['params'])
+            for item in plan_data['processing_plan']
+            if not item['completed']
+        ]
+
+        self._print(f"\n📋 処理計画を読み込みました: {plan_file}")
+        self._print(f"   作成日時: {plan_data['created_at']}")
+        self._print(f"   残り処理数: {len(processing_plan)}/{len(plan_data['processing_plan'])}")
+
+        return {
+            'file_info': plan_data['file_info'],
+            'level_info': plan_data['level_info'],
+            'noise_info': plan_data['noise_info'],
+            'processing_plan': processing_plan,
+            'original_plan_file': plan_file,
+            'original_plan_data': plan_data
+        }
+
+    def update_processing_plan(
+        self,
+        plan_file: str,
+        completed_index: int
+    ) -> None:
+        """
+        処理計画の進捗を更新
+
+        Args:
+            plan_file: JSONファイルのパス
+            completed_index: 完了した処理のインデックス
+        """
+        with open(plan_file, 'r', encoding='utf-8') as f:
+            plan_data = json.load(f)
+
+        # 完了フラグを更新
+        if 0 <= completed_index < len(plan_data['processing_plan']):
+            plan_data['processing_plan'][completed_index]['completed'] = True
+            plan_data['last_updated'] = datetime.now().isoformat()
+
+            with open(plan_file, 'w', encoding='utf-8') as f:
+                json.dump(plan_data, f, ensure_ascii=False, indent=2)
 
     def _create_processing_plan(
         self,
@@ -190,7 +325,7 @@ class AudioProcessingPipeline:
             plan.append((
                 "ディエッサー（歯擦音抑制）",
                 "apply_deesser",
-                {'threshold_db': -20.0, 'reduction_db': 6.0}
+                {'threshold_db': -20.0, 'ratio': 3.0}
             ))
 
         # 4. レベル処理
@@ -225,7 +360,7 @@ class AudioProcessingPipeline:
         plan.append((
             "長い無音の圧縮",
             "compress_long_silence",
-            {'silence_thresh_db': -40.0, 'min_silence_duration': 0.5, 'keep_silence_duration': 0.2}
+            {'silence_thresh_db': -40.0, 'max_silence_duration': 0.2, 'min_silence_to_compress': 0.5}
         ))
 
         return plan
@@ -236,7 +371,9 @@ class AudioProcessingPipeline:
         output_file: str,
         analysis_result: Optional[Dict] = None,
         split_output: bool = False,
-        split_params: Optional[Dict] = None
+        split_params: Optional[Dict] = None,
+        save_plan: bool = True,
+        plan_file: Optional[str] = None
     ) -> bool:
         """
         パイプラインを実行
@@ -247,6 +384,8 @@ class AudioProcessingPipeline:
             analysis_result: 分析結果（Noneの場合は自動分析）
             split_output: 最終処理として無音区間で分割するかどうか
             split_params: 分割処理のパラメータ
+            save_plan: 処理計画を保存するかどうか
+            plan_file: 保存する処理計画のファイルパス
 
         Returns:
             成功時True
@@ -255,6 +394,20 @@ class AudioProcessingPipeline:
             # 分析が未実施の場合は実行
             if analysis_result is None:
                 analysis_result = self.analyze_and_plan(input_file)
+
+            # 処理計画を保存
+            if save_plan:
+                if plan_file is None and 'original_plan_file' in analysis_result:
+                    plan_file = analysis_result['original_plan_file']
+                else:
+                    plan_file = self.save_processing_plan(analysis_result, input_file, output_file, plan_file)
+            
+            # 元の処理計画データを保持（進捗更新用）
+            original_plan_data = analysis_result.get('original_plan_data')
+            completed_offset = 0
+            if original_plan_data:
+                # 既に完了した処理の数を計算
+                completed_offset = sum(1 for item in original_plan_data['processing_plan'] if item['completed'])
 
             processing_plan = analysis_result['processing_plan']
 
@@ -300,7 +453,13 @@ class AudioProcessingPipeline:
 
                 if not success:
                     self._print(f"❌ 処理失敗: {name}")
+                    self._print(f"\n💡 ヒント: 処理計画ファイル {plan_file} から再開できます")
                     return False
+
+                # 進捗を更新
+                if plan_file and save_plan:
+                    actual_index = completed_offset + i - 1
+                    self.update_processing_plan(plan_file, actual_index)
 
                 self._print(f"✅ 完了: {name}")
                 current_file = next_file
@@ -321,12 +480,12 @@ class AudioProcessingPipeline:
                     split_params = {
                         'silence_thresh_db': -40.0,
                         'min_voice_duration': 0.5,
-                        'min_silence_duration': 0.3
+                        'min_silence_duration': 3.0
                     }
                 
                 # 出力ディレクトリを準備
                 output_path = Path(output_file)
-                split_dir = output_path.parent / "split_segments"
+                split_dir = output_path.parent / "split_segments3"
                 split_dir.mkdir(parents=True, exist_ok=True)
                 
                 # プレフィックスを生成（元のファイル名から）
@@ -493,7 +652,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="音声処理パイプライン")
-    parser.add_argument("input", help="入力ファイルまたはディレクトリ")
+    parser.add_argument("input", nargs="?", help="入力ファイルまたはディレクトリ")
     parser.add_argument("output", nargs="?", help="出力ファイルまたはディレクトリ（省略時は自動生成）")
     parser.add_argument("--batch", action="store_true", help="ディレクトリ一括処理モード")
     parser.add_argument("--pattern", default="*.wav", help="バッチ処理時のファイルパターン")
@@ -502,11 +661,56 @@ def main():
     parser.add_argument("--split", action="store_true", help="最終処理として無音区間で分割する")
     parser.add_argument("--split-thresh", type=float, default=-40.0, help="分割時の無音閾値（dBFS, デフォルト: -40.0）")
     parser.add_argument("--min-voice", type=float, default=0.5, help="最小音声区間長（秒, デフォルト: 0.5）")
-    parser.add_argument("--min-silence", type=float, default=0.3, help="最小無音区間長（秒, デフォルト: 0.3）")
+    parser.add_argument("--min-silence", type=float, default=1.0, help="最小無音区間長（秒, デフォルト: 1.0）")
+    parser.add_argument("--plan", help="処理計画JSONファイル（途中から再開する場合）")
+    parser.add_argument("--save-plan", action="store_true", default=True, help="処理計画を保存する（デフォルト: True）")
+    parser.add_argument("--no-save-plan", action="store_false", dest="save_plan", help="処理計画を保存しない")
     
     args = parser.parse_args()
     
     pipeline = AudioProcessingPipeline(verbose=not args.quiet)
+    
+    # 処理計画ファイルから再開する場合
+    if args.plan:
+        if not Path(args.plan).exists():
+            print(f"エラー: 処理計画ファイルが見つかりません: {args.plan}")
+            exit(1)
+        
+        # 処理計画を読み込み
+        analysis_result = pipeline.load_processing_plan(args.plan)
+        
+        # 処理計画から入力・出力ファイルを取得
+        with open(args.plan, 'r', encoding='utf-8') as f:
+            plan_data = json.load(f)
+        
+        input_file = plan_data['input_file']
+        output_file = plan_data['output_file']
+        
+        # 分割パラメータの準備
+        split_params = None
+        if args.split:
+            split_params = {
+                'silence_thresh_db': args.split_thresh,
+                'min_voice_duration': args.min_voice,
+                'min_silence_duration': args.min_silence
+            }
+        
+        # 処理を再開
+        success = pipeline.execute_pipeline(
+            input_file,
+            output_file,
+            analysis_result=analysis_result,
+            split_output=args.split,
+            split_params=split_params,
+            save_plan=args.save_plan,
+            plan_file=args.plan
+        )
+        exit(0 if success else 1)
+    
+    # 通常の処理（新規）
+    if args.input is None:
+        parser.print_help()
+        exit(1)
     
     # 出力パスが指定されていない場合は自動生成
     if args.output is None:
@@ -548,7 +752,8 @@ def main():
             args.input, 
             args.output,
             split_output=args.split,
-            split_params=split_params
+            split_params=split_params,
+            save_plan=args.save_plan
         )
         exit(0 if success else 1)
 
