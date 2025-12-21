@@ -295,6 +295,78 @@ class AudioSilenceProcessor:
             self._print(f"エラー: {e}")
             return []
 
+    def split_by_duration(
+        self,
+        input_file: str,
+        output_dir: str,
+        duration_seconds: float = 30.0,
+        prefix: str = "segment"
+    ) -> List[str]:
+        """
+        指定秒数ごとに音声を分割
+        
+        Args:
+            input_file: 入力音声ファイルのパス
+            output_dir: 出力ディレクトリ
+            duration_seconds: 分割する秒数（デフォルト: 30秒）
+            prefix: 出力ファイル名のプレフィックス
+        
+        Returns:
+            作成されたファイルのパスのリスト
+        """
+        try:
+            self._print(f"指定秒数({duration_seconds}秒)ごとの分割処理中...")
+            
+            # 出力ディレクトリを作成
+            output_path = Path(output_dir)
+            output_path.mkdir(parents=True, exist_ok=True)
+            
+            # 音声を読み込み
+            y, sr = librosa.load(input_file, sr=None, mono=False)
+            
+            # ステレオかモノラルか判定
+            is_stereo = y.ndim == 2
+            total_duration = len(y[0] if is_stereo else y) / sr
+            
+            # 分割数を計算
+            num_segments = int(np.ceil(total_duration / duration_seconds))
+            
+            self._print(f"  総時間: {total_duration:.2f}秒")
+            self._print(f"  分割数: {num_segments}個")
+            
+            # 各セグメントを保存
+            output_files = []
+            for idx in range(num_segments):
+                start_time = idx * duration_seconds
+                end_time = min((idx + 1) * duration_seconds, total_duration)
+                
+                start_sample = int(start_time * sr)
+                end_sample = int(end_time * sr)
+                
+                # セグメントを切り出し
+                if is_stereo:
+                    segment_audio = y[:, start_sample:end_sample]
+                else:
+                    segment_audio = y[start_sample:end_sample]
+                
+                # ファイル名を生成
+                segment_duration_ms = int((end_time - start_time) * 1000)
+                start_ms = int(start_time * 1000)
+                output_file = output_path / f"{prefix}_{idx+1:04d}_{start_ms}ms_{segment_duration_ms}ms.wav"
+                
+                # 保存
+                sf.write(str(output_file), segment_audio.T if segment_audio.ndim > 1 else segment_audio, sr)
+                output_files.append(str(output_file))
+                
+                self._print(f"  {idx+1}. {start_time:.2f}s - {end_time:.2f}s (長さ: {end_time - start_time:.2f}s) → {output_file.name}")
+            
+            self._print(f"✅ {len(output_files)}個のファイルに分割完了: {output_dir}")
+            return output_files
+            
+        except Exception as e:
+            self._print(f"エラー: {e}")
+            return []
+
     def remove_all_silence(
         self,
         input_file: str,

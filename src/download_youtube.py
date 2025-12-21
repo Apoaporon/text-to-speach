@@ -180,7 +180,7 @@ def main():
     # 使用例
     
     # YouTube動画のURL
-    url = "https://youtu.be/H0VfXN9W5rg"  # サンプルURL
+    url = "https://youtu.be/2GSESXvHKko"  # サンプルURL
     
     # 動画情報を取得
     print("=" * 50)

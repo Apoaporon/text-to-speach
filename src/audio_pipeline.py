@@ -471,35 +471,66 @@ class AudioProcessingPipeline:
 
             # 分割処理（オプション）
             if split_output:
-                self._print("\n" + "=" * 80)
-                self._print("【最終処理: 無音区間で分割】")
-                self._print("=" * 80)
-                
                 # 分割パラメータのデフォルト値
                 if split_params is None:
                     split_params = {
+                        'mode': 'vad',  # 'vad' or 'duration'
                         'silence_thresh_db': -40.0,
                         'min_voice_duration': 0.5,
-                        'min_silence_duration': 3.0
+                        'min_silence_duration': 3.0,
+                        'duration_seconds': 30.0
                     }
                 
-                # 出力ディレクトリを準備
-                output_path = Path(output_file)
-                split_dir = output_path.parent / "split_segments3"
-                split_dir.mkdir(parents=True, exist_ok=True)
+                # 分割モードを取得
+                split_mode = split_params.get('mode', 'vad')
                 
-                # プレフィックスを生成（元のファイル名から）
-                prefix = output_path.stem
-                
-                # 分割実行
-                split_files = self.silence_processor.split_by_vad(
-                    output_file,
-                    str(split_dir),
-                    silence_thresh_db=split_params.get('silence_thresh_db', -40.0),
-                    min_voice_duration=split_params.get('min_voice_duration', 0.5),
-                    min_silence_duration=split_params.get('min_silence_duration', 0.3),
-                    prefix=prefix
-                )
+                if split_mode == 'vad':
+                    self._print("\n" + "=" * 80)
+                    self._print("【最終処理: 無音区間で分割】")
+                    self._print("=" * 80)
+                    
+                    # 出力ディレクトリを準備
+                    output_path = Path(output_file)
+                    split_dir = output_path.parent / "split_segments3"
+                    split_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # プレフィックスを生成（元のファイル名から）
+                    prefix = output_path.stem
+                    
+                    # 分割実行
+                    split_files = self.silence_processor.split_by_vad(
+                        output_file,
+                        str(split_dir),
+                        silence_thresh_db=split_params.get('silence_thresh_db', -40.0),
+                        min_voice_duration=split_params.get('min_voice_duration', 0.5),
+                        min_silence_duration=split_params.get('min_silence_duration', 0.3),
+                        prefix=prefix
+                    )
+                    
+                elif split_mode == 'duration':
+                    self._print("\n" + "=" * 80)
+                    self._print(f"【最終処理: 指定秒数({split_params.get('duration_seconds', 30.0)}秒)ごとに分割】")
+                    self._print("=" * 80)
+                    
+                    # 出力ディレクトリを準備
+                    output_path = Path(output_file)
+                    split_dir = output_path.parent / "split_segments3"
+                    split_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # プレフィックスを生成（元のファイル名から）
+                    prefix = output_path.stem
+                    
+                    # 分割実行
+                    split_files = self.silence_processor.split_by_duration(
+                        output_file,
+                        str(split_dir),
+                        duration_seconds=split_params.get('duration_seconds', 30.0),
+                        prefix=prefix
+                    )
+                    
+                else:
+                    self._print(f"\n⚠️ 不明な分割モード: {split_mode}")
+                    return False
                 
                 if split_files:
                     self._print(f"\n✅ {len(split_files)}個のファイルに分割完了")
@@ -658,10 +689,12 @@ def main():
     parser.add_argument("--pattern", default="*.wav", help="バッチ処理時のファイルパターン")
     parser.add_argument("--quiet", action="store_true", help="詳細出力を抑制")
     parser.add_argument("--output-dir", default="audio/output", help="出力ディレクトリ（デフォルト: audio/output）")
-    parser.add_argument("--split", action="store_true", help="最終処理として無音区間で分割する")
-    parser.add_argument("--split-thresh", type=float, default=-40.0, help="分割時の無音閾値（dBFS, デフォルト: -40.0）")
-    parser.add_argument("--min-voice", type=float, default=0.5, help="最小音声区間長（秒, デフォルト: 0.5）")
-    parser.add_argument("--min-silence", type=float, default=1.0, help="最小無音区間長（秒, デフォルト: 1.0）")
+    parser.add_argument("--split", action="store_true", help="最終処理として分割する")
+    parser.add_argument("--split-mode", choices=['vad', 'duration'], default='vad', help="分割モード: vad（無音区間）または duration（指定秒数）（デフォルト: vad）")
+    parser.add_argument("--split-thresh", type=float, default=-40.0, help="[VADモード] 分割時の無音閾値（dBFS, デフォルト: -40.0）")
+    parser.add_argument("--min-voice", type=float, default=0.5, help="[VADモード] 最小音声区間長（秒, デフォルト: 0.5）")
+    parser.add_argument("--min-silence", type=float, default=1.0, help="[VADモード] 最小無音区間長（秒, デフォルト: 1.0）")
+    parser.add_argument("--duration", type=float, default=30.0, help="[Durationモード] 分割する秒数（デフォルト: 30.0）")
     parser.add_argument("--plan", help="処理計画JSONファイル（途中から再開する場合）")
     parser.add_argument("--save-plan", action="store_true", default=True, help="処理計画を保存する（デフォルト: True）")
     parser.add_argument("--no-save-plan", action="store_false", dest="save_plan", help="処理計画を保存しない")
@@ -690,9 +723,11 @@ def main():
         split_params = None
         if args.split:
             split_params = {
+                'mode': args.split_mode,
                 'silence_thresh_db': args.split_thresh,
                 'min_voice_duration': args.min_voice,
-                'min_silence_duration': args.min_silence
+                'min_silence_duration': args.min_silence,
+                'duration_seconds': args.duration
             }
         
         # 処理を再開
@@ -731,9 +766,11 @@ def main():
     split_params = None
     if args.split:
         split_params = {
+            'mode': args.split_mode,
             'silence_thresh_db': args.split_thresh,
             'min_voice_duration': args.min_voice,
-            'min_silence_duration': args.min_silence
+            'min_silence_duration': args.min_silence,
+            'duration_seconds': args.duration
         }
     
     if args.batch:
