@@ -1,0 +1,177 @@
+{
+  "metadata": {
+    "created_at": "2026-01-26T22:04:05.220751",
+    "version": "1.0.0"
+  },
+  "summary": {
+    "total_files": 9,
+    "success_count": 9,
+    "error_count": 0,
+    "total_duration": 66.71828125,
+    "total_processing_time": 4.372411727905273,
+    "average_processing_speed": 15.25892011134168,
+    "emotion_distribution": {
+      "happy": 7,
+      "angry": 1,
+      "neutral": 1
+    },
+    "emotion_stats": {
+      "neutral": {
+        "count": 1,
+        "percentage": 11.11111111111111,
+        "average_confidence": 0.2715289890766144,
+        "total_duration": 7.6433333333333335
+      },
+      "happy": {
+        "count": 7,
+        "percentage": 77.77777777777779,
+        "average_confidence": 0.2880470028945378,
+        "total_duration": 52.09828125
+      },
+      "angry": {
+        "count": 1,
+        "percentage": 11.11111111111111,
+        "average_confidence": 0.280267596244812,
+        "total_duration": 6.976666666666667
+      }
+    },
+    "average_confidence": 0.28534728950924343
+  },
+  "results": [
+    {
+      "emotions": {
+        "angry": 0.23886819183826447,
+        "happy": 0.30073538422584534,
+        "neutral": 0.24155105650424957,
+        "sad": 0.21884535253047943
+      },
+      "dominant_emotion": "happy",
+      "confidence": 0.30073538422584534,
+      "processing_time": 0.7715928554534912,
+      "error": null,
+      "filename": "ROHAN4600_0001.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0001.wav",
+      "duration": 6.94165625
+    },
+    {
+      "emotions": {
+        "angry": 0.24633485078811646,
+        "happy": 0.29418665170669556,
+        "neutral": 0.2262025773525238,
+        "sad": 0.23327597975730896
+      },
+      "dominant_emotion": "happy",
+      "confidence": 0.29418665170669556,
+      "processing_time": 0.4525578022003174,
+      "error": null,
+      "filename": "ROHAN4600_0002.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0002.wav",
+      "duration": 7.14165625
+    },
+    {
+      "emotions": {
+        "angry": 0.280267596244812,
+        "happy": 0.2186199426651001,
+        "neutral": 0.24949757754802704,
+        "sad": 0.25161489844322205
+      },
+      "dominant_emotion": "angry",
+      "confidence": 0.280267596244812,
+      "processing_time": 0.3926401138305664,
+      "error": null,
+      "filename": "ROHAN4600_0003.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0003.wav",
+      "duration": 6.976666666666667
+    },
+    {
+      "emotions": {
+        "angry": 0.25745585560798645,
+        "happy": 0.2834148108959198,
+        "neutral": 0.24430234730243683,
+        "sad": 0.21482694149017334
+      },
+      "dominant_emotion": "happy",
+      "confidence": 0.2834148108959198,
+      "processing_time": 0.4333629608154297,
+      "error": null,
+      "filename": "ROHAN4600_0004.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0004.wav",
+      "duration": 7.843333333333334
+    },
+    {
+      "emotions": {
+        "angry": 0.25369682908058167,
+        "happy": 0.2938205897808075,
+        "neutral": 0.22759996354579926,
+        "sad": 0.22488261759281158
+      },
+      "dominant_emotion": "happy",
+      "confidence": 0.2938205897808075,
+      "processing_time": 0.6135029792785645,
+      "error": null,
+      "filename": "ROHAN4600_0005.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0005.wav",
+      "duration": 9.51165625
+    },
+    {
+      "emotions": {
+        "angry": 0.2550305724143982,
+        "happy": 0.26352623105049133,
+        "neutral": 0.2715289890766144,
+        "sad": 0.20991423726081848
+      },
+      "dominant_emotion": "neutral",
+      "confidence": 0.2715289890766144,
+      "processing_time": 0.511864423751831,
+      "error": null,
+      "filename": "ROHAN4600_0006.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0006.wav",
+      "duration": 7.6433333333333335
+    },
+    {
+      "emotions": {
+        "angry": 0.25287720561027527,
+        "happy": 0.2812231183052063,
+        "neutral": 0.24199405312538147,
+        "sad": 0.22390559315681458
+      },
+      "dominant_emotion": "happy",
+      "confidence": 0.2812231183052063,
+      "processing_time": 0.3913726806640625,
+      "error": null,
+      "filename": "ROHAN4600_0007.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0007.wav",
+      "duration": 7.21
+    },
+    {
+      "emotions": {
+        "angry": 0.25491324067115784,
+        "happy": 0.2823118567466736,
+        "neutral": 0.23552808165550232,
+        "sad": 0.22724679112434387
+      },
+      "dominant_emotion": "happy",
+      "confidence": 0.2823118567466736,
+      "processing_time": 0.4295949935913086,
+      "error": null,
+      "filename": "ROHAN4600_0008.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0008.wav",
+      "duration": 7.208322916666667
+    },
+    {
+      "emotions": {
+        "angry": 0.25894787907600403,
+        "happy": 0.28063660860061646,
+        "neutral": 0.25526875257492065,
+        "sad": 0.20514671504497528
+      },
+      "dominant_emotion": "happy",
+      "confidence": 0.28063660860061646,
+      "processing_time": 0.37592291831970215,
+      "error": null,
+      "filename": "ROHAN4600_0009.wav",
+      "filepath": "C:\\Users\\usago\\python\\audio-data\\zundamon\\ROHAN4600_zumndamon_normal_synchronized_wav\\ROHAN4600_0009.wav",
+      "duration": 6.24165625
+    }
+  ]
+}

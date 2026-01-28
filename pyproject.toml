@@ -1,2 +1,17 @@
+[project]
+name = "text-to-speech"
+version = "0.1.0"
+dependencies = [
+    "torch",
+    "torchaudio",
+    "transformers",
+    "speechbrain",
+    "librosa",
+    "soundfile",
+    "numpy",
+    "scipy",
+    "tqdm",
+]
+
 [tool.pylint.'MESSAGES CONTROL']
 max-line-length = 300
